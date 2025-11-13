@@ -1,0 +1,500 @@
+/* App Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8fafc;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  padding-top: 0;
+}
+
+/* Navigation Styles */
+.app-nav {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  transition: transform 0.2s ease;
+}
+
+.nav-brand:hover {
+  transform: translateY(-1px);
+}
+
+.brand-icon {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Button Styles */
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.button-icon {
+  font-size: 1.1rem;
+}
+
+/* Primary Button */
+.nav-button.primary {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+}
+
+.nav-button.primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+}
+
+/* Secondary Button */
+.nav-button.secondary {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.nav-button.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Google Auth Button */
+.nav-button.google-auth {
+  background: white;
+  color: #667eea;
+  border: 1px solid white;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+}
+
+.nav-button.google-auth:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .nav-container {
+    padding: 0 15px;
+    height: 60px;
+  }
+  
+  .nav-brand {
+    font-size: 1.3rem;
+  }
+  
+  .brand-icon {
+    font-size: 1.5rem;
+  }
+  
+  .nav-actions {
+    gap: 8px;
+  }
+  
+  .nav-button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .button-icon {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-brand span:last-child {
+    display: none;
+  }
+  
+  .nav-button {
+    padding: 8px 12px;
+  }
+  
+  .nav-button .button-text {
+    display: none;
+  }
+  
+  .nav-button .button-icon {
+    margin-right: 0;
+  }
+}
+
+/* Animation for page transitions */
+.app-main {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading state for buttons */
+.nav-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Focus states for accessibility */
+.nav-button:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.nav-brand:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f8fafc;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  padding-top: 0;
+}
+
+/* Navigation */
+.app-nav {
+  background: white;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  transition: all 0.3s ease;
+}
+
+.nav-brand:hover {
+  transform: translateY(-1px);
+}
+
+.brand-icon {
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Navigation Buttons */
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.nav-button.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.nav-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.nav-button.profile-btn {
+
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.nav-button.profile-btn:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+
+.nav-button.google-auth {
+  background: #4285f4;
+  color: white;
+  box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+}
+
+.nav-button.google-auth:hover {
+  background: #3367d6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(66, 133, 244, 0.4);
+}
+
+.button-icon {
+  font-size: 1.1rem;
+}
+
+/* Responsive Navigation */
+@media (max-width: 768px) {
+  .nav-container {
+    padding: 0 15px;
+    height: 60px;
+  }
+  
+  .nav-brand {
+    font-size: 1.3rem;
+  }
+  
+  .brand-icon {
+    font-size: 1.5rem;
+  }
+  
+  .nav-actions {
+    gap: 8px;
+  }
+  
+  .nav-button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-button .button-text {
+    display: none;
+  }
+  
+  .nav-button .button-icon {
+    margin-right: 0;
+  }
+  
+  .nav-button {
+    padding: 10px;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+}/* Add this to your existing App.css */
+.nav-button.logout-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.nav-button.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-1px);
+}
+/* Navigation */
+.navbar {
+  background: var(--white);
+  box-shadow: var(--shadow);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.brand-icon {
+  font-size: 1.8rem;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.user-menu:hover {
+  background: var(--secondary);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.main-content {
+  min-height: calc(100vh - 70px);
+}
+
+/* Mobile Navigation */
+@media (max-width: 768px) {
+  .nav-content {
+    height: 60px;
+  }
+  
+  .brand-text {
+    font-size: 1.2rem;
+  }
+  
+  .brand-icon {
+    font-size: 1.5rem;
+  }
+  
+  .nav-actions {
+    gap: 8px;
+  }
+  
+  .user-name {
+    display: none;
+  }
+  
+  .btn-text {
+    display: none;
+  }
+  
+  .btn {
+    padding: 10px;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+}
