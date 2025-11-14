@@ -41,6 +41,18 @@ const userSchema = new mongoose.Schema({
     publicProfile: {
       type: Boolean,
       default: true
+    },
+    pushNotifications: {
+      type: Boolean,
+      default: true
+    },
+    showEmail: {
+      type: Boolean,
+      default: false
+    },
+    allowMessages: {
+      type: Boolean,
+      default: true
     }
   },
   stats: {
@@ -71,6 +83,12 @@ userSchema.methods.incrementPollsCount = function() {
 // Update stats when user's poll receives a vote
 userSchema.methods.incrementVotesCount = function(votes = 1) {
   this.stats.totalVotesReceived += votes;
+  return this.save();
+};
+
+// Update last active timestamp
+userSchema.methods.updateLastActive = function() {
+  this.stats.lastActive = new Date();
   return this.save();
 };
 

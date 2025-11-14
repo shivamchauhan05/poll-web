@@ -58,7 +58,16 @@ const pollSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
-  // NEW FIELDS ADDED
+  // Image field added
+  image: {
+    type: String, // URL of the uploaded image
+    default: null
+  },
+  // Vote tracking
+  voters: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -76,17 +85,20 @@ const pollSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Update totalVotes when option is voted
-pollSchema.methods.vote = function(optionIndex) {
+// Vote method with voter tracking
+pollSchema.methods.vote = function(optionIndex, userId) {
+  if (this.voters.includes(userId)) {
+    throw new Error('You have already voted in this poll');
+  }
+
   if (optionIndex >= 0 && optionIndex < this.options.length) {
     this.options[optionIndex].votes += 1;
     this.totalVotes += 1;
+    this.voters.push(userId);
     return this.save();
   }
   throw new Error('Invalid option index');
 };
-
-// NEW METHODS ADDED
 
 // Like/Unlike poll
 pollSchema.methods.toggleLike = function(userId) {
@@ -139,6 +151,11 @@ pollSchema.methods.removeComment = function(commentId, userId) {
   return this.save();
 };
 
+// Check if user has voted
+pollSchema.methods.hasVoted = function(userId) {
+  return this.voters.includes(userId);
+};
+
 // Check if user has liked the poll
 pollSchema.methods.hasLiked = function(userId) {
   return this.likes.includes(userId);
@@ -174,5 +191,6 @@ pollSchema.index({ author: 1, createdAt: -1 });
 pollSchema.index({ likesCount: -1 });
 pollSchema.index({ commentsCount: -1 });
 pollSchema.index({ expiresAt: 1 });
+pollSchema.index({ voters: 1 });
 
 export default mongoose.model('Poll', pollSchema);

@@ -8,40 +8,32 @@ export default function Home() {
   const navigate = useNavigate();
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [stats, setStats] = useState({ total: 0, active: 0 });
 
-  const fetchPolls = useCallback(async () => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  const fetchPolls = useCallback(async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError('');
+      
       const response = await api.get('/polls');
-      
-      // Debug: Check what we're getting from API
-      console.log('API Response:', response);
-      console.log('Response data:', response.data);
-      
-      // Handle different response formats
       let pollsData = [];
       
       if (Array.isArray(response.data)) {
-        // If response.data is directly an array
         pollsData = response.data;
       } else if (response.data && Array.isArray(response.data.polls)) {
-        // If response.data has a polls property
         pollsData = response.data.polls;
-      } else if (response.data && typeof response.data === 'object') {
-        // If it's an object but not array, try to extract polls
-        pollsData = Object.values(response.data).find(Array.isArray) || [];
       }
       
-      console.log('Processed polls data:', pollsData);
-      
-      // Ensure it's an array
-      if (!Array.isArray(pollsData)) {
-        pollsData = [];
-      }
-      
+      // Sort by latest first
+      pollsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setPolls(pollsData);
       
       // Calculate stats
@@ -57,9 +49,10 @@ export default function Home() {
       console.error('Error fetching polls:', err);
       const errorMessage = err.response?.data?.error || 'Failed to fetch polls. Please try again.';
       setError(errorMessage);
-      setPolls([]); // Reset to empty array on error
+      setPolls([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -68,95 +61,132 @@ export default function Home() {
   }, [fetchPolls]);
 
   const handleUpdate = useCallback((updatedPoll) => {
-    setPolls(prev => {
-      if (!Array.isArray(prev)) return [updatedPoll];
-      return prev.map(p => p && p._id === updatedPoll._id ? updatedPoll : p);
-    });
+    setPolls(prev => prev.map(p => p._id === updatedPoll._id ? updatedPoll : p));
   }, []);
 
   const handleDelete = useCallback((deletedId) => {
-    setPolls(prev => {
-      if (!Array.isArray(prev)) return [];
-      return prev.filter(p => p && p._id !== deletedId);
-    });
+    setPolls(prev => prev.filter(p => p._id !== deletedId));
     setStats(prev => ({ ...prev, total: Math.max(0, prev.total - 1) }));
   }, []);
 
-  // Safe array check and rendering
-  const safePolls = Array.isArray(polls) ? polls : [];
-  const displayPolls = safePolls.filter(poll => poll && typeof poll === 'object');
+  const handleRefresh = () => {
+    fetchPolls(true);
+  };
 
   return (
     <div className="home-page">
-      <div className="container">
-        {/* Header */}
-        <div className="home-header">
-          <h1>Community Polls</h1>
-          <p>Discover what people are voting on and share your opinion</p>
+      {/* Welcome Section */}
+      <div className="welcome-section">
+        <div className="welcome-content">
+          <h1 className="welcome-title">
+            Welcome back, <span className="user-name">{user.name || 'User'}!</span>
+          </h1>
+          <p className="welcome-subtitle">Discover what people are voting on and share your opinion</p>
         </div>
+        <button 
+          className="btn btn-primary create-poll-btn"
+          onClick={() => navigate('/add')}
+        >
+          <span className="btn-icon">+</span>
+          Create Poll
+        </button>
+      </div>
 
-        {/* Stats */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">📊</div>
-            <div className="stat-info">
-              <div className="stat-number">{stats.total}</div>
-              <div className="stat-label">Total Polls</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">📈</div>
-            <div className="stat-info">
-              <div className="stat-number">{stats.active}</div>
-              <div className="stat-label">Active Polls</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Ad Space */}
-        <div className="ad-space">
-          <div className="ad-content">
-            <h3>Premium Ad Space</h3>
-            <p>Reach engaged audience with targeted campaigns</p>
-            <div className="ad-placeholder">
-              Your Ad Here • Contact: ads@votesphere.com
-            </div>
+      {/* Stats Overview */}
+      <div className="stats-overview">
+        <div className="stat-card">
+          <div className="stat-icon">📊</div>
+          <div className="stat-content">
+            <div className="stat-number">{stats.total}</div>
+            <div className="stat-label">Total Polls</div>
           </div>
         </div>
+        <div className="stat-card">
+          <div className="stat-icon">📈</div>
+          <div className="stat-content">
+            <div className="stat-number">{stats.active}</div>
+            <div className="stat-label">Active Polls</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">👥</div>
+          <div className="stat-content">
+            <div className="stat-number">{polls.reduce((sum, poll) => sum + (poll.totalVotes || 0), 0)}</div>
+            <div className="stat-label">Total Votes</div>
+          </div>
+        </div>
+      </div>
 
-        {/* Error */}
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        <h2 className="section-title">Quick Actions</h2>
+        <div className="actions-grid">
+          <button 
+            className="action-card"
+            onClick={() => navigate('/add')}
+          >
+            <div className="action-icon primary">✏️</div>
+            <div className="action-content">
+              <h3>Create Poll</h3>
+              <p>Start a new poll and engage the community</p>
+            </div>
+            <div className="action-arrow">→</div>
+          </button>
+          
+          <button 
+            className="action-card"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <div className="action-icon secondary">🔄</div>
+            <div className="action-content">
+              <h3>Refresh Feed</h3>
+              <p>See the latest polls and updates</p>
+            </div>
+            <div className="action-arrow">→</div>
+          </button>
+        </div>
+      </div>
+
+      {/* Polls Feed */}
+      <div className="polls-feed">
+        <div className="feed-header">
+          <h2 className="section-title">Recent Polls</h2>
+          <div className="feed-actions">
+            <button 
+              className="btn btn-secondary refresh-btn"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <span className={`refresh-icon ${refreshing ? 'spinning' : ''}`}>🔄</span>
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+        </div>
+
         {error && (
-          <div className="error-banner">
-            <span>⚠️</span>
-            <span>{error}</span>
-            <button onClick={() => setError('')}>×</button>
+          <div className="error-message">
+            <div className="error-icon">⚠️</div>
+            <div className="error-content">
+              <p>{error}</p>
+              <button onClick={() => setError('')} className="error-dismiss">
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Polls Section */}
-        <div className="polls-section">
-          <div className="section-header">
-            <h2>Recent Polls</h2>
-            <button 
-              className="btn btn-outline"
-              onClick={fetchPolls}
-              disabled={loading}
-            >
-              <span>🔄</span>
-              <span>Refresh</span>
-            </button>
+        {loading ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading polls...</p>
           </div>
-
-          {loading ? (
-            <div className="loading-state">
-              <div className="loading-spinner"></div>
-              <p>Loading polls...</p>
-            </div>
-          ) : displayPolls.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">📝</div>
+        ) : polls.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📝</div>
+            <div className="empty-content">
               <h3>No polls available</h3>
-              <p>{error ? 'Failed to load polls' : 'Be the first to create a poll and start the conversation'}</p>
+              <p>Be the first to create a poll and start the conversation</p>
               <button 
                 className="btn btn-primary"
                 onClick={() => navigate('/add')}
@@ -164,19 +194,26 @@ export default function Home() {
                 Create First Poll
               </button>
             </div>
-          ) : (
-            <div className="polls-grid">
-              {displayPolls.map((poll) => (
-                <PollCard 
-                  key={poll._id || Math.random()}
-                  poll={poll}
-                  onUpdate={handleUpdate}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="polls-grid">
+            {polls.map((poll) => (
+              <PollCard 
+                key={poll._id}
+                poll={poll}
+                onUpdate={handleUpdate}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
+
+        {refreshing && (
+          <div className="refreshing-indicator">
+            <div className="spinner small"></div>
+            Updating feed...
+          </div>
+        )}
       </div>
     </div>
   );

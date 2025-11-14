@@ -4,7 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
-
+import path from 'path';
+import { fileURLToPath } from 'url';
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import pollRoutes from './routes/pollRoutes.js';
@@ -15,8 +16,10 @@ import './middleware/authMiddleware.js';
 import './auth/googleStrategy.js';
 
 dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Middleware
 app.use(cors({ 
   origin: process.env.FRONTEND_URL, 

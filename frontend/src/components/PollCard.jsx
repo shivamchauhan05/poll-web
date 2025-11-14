@@ -10,20 +10,74 @@ export default function PollCard({ poll, onUpdate, onDelete }) {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [voteLoading, setVoteLoading] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
-  const vote = async (index) => {
+  // Check if current user has already voted
+  const hasVoted = poll.voters?.includes(user.id);
+  
+  // Find which option user voted for
+  const getUserVote = () => {
+    if (!hasVoted) return null;
+    
+    // Backend should return which option user voted for
+    // For now, we'll check local storage as fallback
     try {
-      const res = await api.post(`/polls/${poll._id}/vote`, { optionIndex: index });
+      const userVotes = JSON.parse(localStorage.getItem('userVotes') || '{}');
+      return userVotes[poll._id];
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const userVotedOption = getUserVote();
+
+  const vote = async (optionIndex) => {
+    // Prevent multiple votes
+    if (hasVoted || voteLoading !== null) return;
+    
+    setVoteLoading(optionIndex);
+    try {
+      const res = await api.post(`/polls/${poll._id}/vote`, { 
+        optionIndex: optionIndex 
+      });
+      
+      // Update local storage to track user's vote
+      try {
+        const userVotes = JSON.parse(localStorage.getItem('userVotes') || '{}');
+        userVotes[poll._id] = optionIndex;
+        localStorage.setItem('userVotes', JSON.stringify(userVotes));
+      } catch (storageError) {
+        console.error('Error saving vote to localStorage:', storageError);
+      }
+      
       onUpdate(res.data);
     } catch (err) {
-      alert(err.response?.data?.error || 'Vote failed');
+      if (err.response?.data?.error === 'You have already voted in this poll') {
+        alert('You have already voted in this poll!');
+      } else {
+        alert(err.response?.data?.error || 'Vote failed');
+      }
+    } finally {
+      setVoteLoading(null);
     }
   };
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this poll?')) return;
+    
     try {
       await api.delete(`/polls/${poll._id}`);
+      
+      // Remove from local storage if deleted
+      try {
+        const userVotes = JSON.parse(localStorage.getItem('userVotes') || '{}');
+        delete userVotes[poll._id];
+        localStorage.setItem('userVotes', JSON.stringify(userVotes));
+      } catch (storageError) {
+        console.error('Error removing vote from localStorage:', storageError);
+      }
+      
       onDelete(poll._id);
     } catch (err) {
       alert(err.response?.data?.error || 'Delete failed');
@@ -35,13 +89,10 @@ export default function PollCard({ poll, onUpdate, onDelete }) {
     
     setLoading(true);
     try {
-      console.log("hello")
       const res = await api.post(`/polls/${poll._id}/like`);
-      console.log(res)
       onUpdate(res.data);
     } catch (err) {
-      console.error('Like error:', err);
-      alert(err.response?.data?.error || 'Like failed. Please try again.');
+      alert(err.response?.data?.error || 'Like failed');
     } finally {
       setLoading(false);
     }
@@ -63,8 +114,7 @@ export default function PollCard({ poll, onUpdate, onDelete }) {
       setNewComment('');
       onUpdate(res.data);
     } catch (err) {
-      console.error('Comment error:', err);
-      alert(err.response?.data?.error || 'Comment failed. Please try again.');
+      alert(err.response?.data?.error || 'Comment failed');
     } finally {
       setLoading(false);
     }
@@ -91,7 +141,7 @@ export default function PollCard({ poll, onUpdate, onDelete }) {
     }
   };
 
-  const totalVotes = poll.options.reduce((sum, option) => sum + (option.votes || 0), 0);
+  const totalVotes = poll.options?.reduce((sum, option) => sum + (option.votes || 0), 0) || 0;
 
   const getVotePercentage = (votes) => {
     if (totalVotes === 0) return 0;
@@ -99,6 +149,8 @@ export default function PollCard({ poll, onUpdate, onDelete }) {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Recently';
+    
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
@@ -117,170 +169,198 @@ export default function PollCard({ poll, onUpdate, onDelete }) {
   const isLiked = poll.likes?.includes(user.id);
 
   return (
-    <div className="poll-container">
-      {/* User Info - TOP SECTION */}
-      <div className="user-header">
-        <div className="user-avatar">
-          {poll.author?.name?.charAt(0) || 'U'}
-        </div>
+    <div className="poll-card">
+      {/* User Header */}
+      <div className="card-header">
         <div className="user-info">
-          <div className="user-name">{poll.author?.name || 'Anonymous User'}</div>
-          <div className="post-time">{formatDate(poll.createdAt)}</div>
+          <div className="user-avatar">
+            {poll.author?.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <div className="user-details">
+            <div className="user-name">{poll.author?.name || 'Anonymous User'}</div>
+            <div className="post-time">{formatDate(poll.createdAt)}</div>
+          </div>
         </div>
+        
         {isOwner && (
-          <div className="user-actions">
-            <Link to={`/edit/${poll._id}`}className="action-btn edit-btn">
+          <div className="card-actions">
+            <Link to={`/edit/${poll._id}`} className="action-btn">
               <span>✏️</span>
             </Link>
-            <button className="action-btn delete-btn" onClick={handleDelete}>
+            <button className="action-btn" onClick={handleDelete}>
               <span>🗑️</span>
             </button>
           </div>
         )}
       </div>
 
-      {/* Poll Card - BELOW USER INFO */}
-      <div className="poll-card">
-        {/* Poll Question */}
-        <div className="poll-question-section">
-          <h3 className="poll-question">{poll.question}</h3>
-          <div className="poll-stats">
-            <span className="stat-item">
-              <span className="stat-icon">📊</span>
-              {totalVotes} votes
-            </span>
-         { /*  <span className="stat-item">
-              <span className="stat-icon">💬</span>
-              {poll.comments?.length || 0} comments
-            </span>
-            <span className="stat-item">
-              <span className="stat-icon">❤️</span>
-              {poll.likes?.length || 0} likes
-            </span>*/}
+      {/* Poll Content */}
+      <div className="card-content">
+        {/* Poll Image */}
+        {poll.image && !imageError && (
+          <div className="poll-image-container">
+            <img 
+              src={`http://localhost:5000${poll.image}`} 
+              alt="Poll visual"
+              className="poll-image"
+              onError={() => setImageError(true)}
+            />
           </div>
-        </div>
-
+        )}
+        
+        <h3 className="poll-question">{poll.question}</h3>
+        
         {/* Poll Options */}
         <div className="poll-options">
-          {poll.options.map((option, index) => {
+          {poll.options?.map((option, index) => {
             const percentage = getVotePercentage(option.votes || 0);
             const isLeading = option.votes === Math.max(...poll.options.map(opt => opt.votes || 0)) && totalVotes > 0;
+            const isUserVote = userVotedOption === index;
             
             return (
-              <div 
+              <button
                 key={index}
-                className={`poll-option ${isLeading ? 'leading' : ''}`}
+                className={`poll-option ${isLeading ? 'leading' : ''} ${
+                  isUserVote ? 'user-vote' : ''
+                } ${voteLoading === index ? 'loading' : ''}`}
                 onClick={() => vote(index)}
+                disabled={hasVoted || voteLoading !== null}
               >
                 <div className="option-content">
                   <span className="option-text">{option.text}</span>
                   <div className="option-stats">
-                    <span className="vote-count">{option.votes || 0}</span>
-                    <span className="vote-percentage">{percentage}%</span>
+                    {hasVoted && (
+                      <>
+                        <span className="percentage">{percentage}%</span>
+                        <span className="votes">({option.votes || 0})</span>
+                      </>
+                    )}
+                    {isUserVote && (
+                      <div className="user-vote-badge">✓ Your vote</div>
+                    )}
                   </div>
                 </div>
-                <div className="vote-progress">
-                  <div 
-                    className="progress-fill"
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-                {isLeading && totalVotes > 0 && (
-                  <div className="leading-badge"></div>
+                
+                {/* Show progress bar only after voting */}
+                {hasVoted && (
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill"
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
                 )}
-              </div>
+                
+                {isLeading && totalVotes > 0 && hasVoted && (
+                  <div className="leading-badge">🔥</div>
+                )}
+              </button>
             );
           })}
         </div>
 
-        {/* Social Actions */}
-        <div className="social-actions">
-          <button 
-            className={`social-btn like-btn ${isLiked ? 'liked' : ''} ${loading ? 'loading' : ''}`}
-            onClick={handleLike}
-            disabled={loading}
-          >
-            <span className="social-icon">
-              {loading ? '⏳' : (isLiked ? '❤️' : '🤍')}
-            </span>
-            <span className="social-count">{poll.likes?.length || 0}</span>
-            <span className="social-text">
-              {loading ? 'Loading...' : (isLiked ? 'Liked' : 'Like')}
-            </span>
-          </button>
-
-          <button 
-            className="social-btn comment-btn"
-            onClick={() => setShowComments(!showComments)}
-            disabled={loading}
-          >
-            <span className="social-icon">💬</span>
-            <span className="social-count">{poll.comments?.length || 0}</span>
-            <span className="social-text">Comment</span>
-          </button>
-
-          <button className="social-btn share-btn" onClick={handleShare}>
-            <span className="social-icon">🔗</span>
-            <span className="social-text">Share</span>
-          </button>
-        </div>
-
-        {/* Comments Section */}
-        {showComments && (
-          <div className="comments-section">
-            <div className="comments-list">
-              {poll.comments?.map((comment, index) => (
-                <div key={index} className="comment-item">
-                  <div className="comment-avatar">
-                    {comment.author?.name?.charAt(0) || 'U'}
-                  </div>
-                  <div className="comment-content">
-                    <div className="comment-header">
-                      <span className="comment-author">{comment.author?.name || 'Anonymous'}</span>
-                      <span className="comment-time">{formatDate(comment.createdAt)}</span>
-                    </div>
-                    <p className="comment-text">{comment.text}</p>
-                  </div>
-                </div>
-              ))}
-              {(!poll.comments || poll.comments.length === 0) && (
-                <div className="no-comments">
-                  No comments yet. Be the first to comment!
-                </div>
-              )}
-            </div>
-            
-            <div className="comment-input">
-              <input
-                type="text"
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                disabled={loading}
-              />
-              <button onClick={handleAddComment} disabled={loading || !newComment.trim()}>
-                {loading ? 'Posting...' : 'Post'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="poll-footer">
-          {totalVotes === 0 ? (
-            <div className="poll-status new">
-              <span>🎯</span>
-              Be the first to vote!
+        {/* Voting Status */}
+        <div className="voting-status">
+          {hasVoted ? (
+            <div className="status-message voted">
+              <span className="status-icon">✅</span>
+              You've already voted in this poll • {totalVotes} total votes
             </div>
           ) : (
-            <div className="poll-status active">
-              <span>📈</span>
-              Poll active • {totalVotes} total votes
+            <div className="status-message not-voted">
+              <span className="status-icon">🗳️</span>
+              Click an option to vote • {totalVotes} total votes
             </div>
           )}
         </div>
+
+        {/* Engagement Stats */}
+        <div className="engagement-stats">
+          {poll.comments?.length > 0 && (
+            <span className="stat">{poll.comments.length} comments</span>
+          )}
+          {poll.likes?.length > 0 && (
+            <span className="stat">{poll.likes.length} likes</span>
+          )}
+        </div>
       </div>
+
+      {/* Action Buttons */}
+      <div className="card-actions-footer">
+        <button 
+          className={`action-btn ${isLiked ? 'liked' : ''} ${loading ? 'loading' : ''}`}
+          onClick={handleLike}
+          disabled={loading}
+        >
+          <span className="action-icon">
+            {loading ? '⏳' : (isLiked ? '❤️' : '🤍')}
+          </span>
+          <span className="action-count">{poll.likes?.length || 0}</span>
+          <span className="action-text">
+            {loading ? 'Loading...' : (isLiked ? 'Liked' : 'Like')}
+          </span>
+        </button>
+
+        <button 
+          className="action-btn"
+          onClick={() => setShowComments(!showComments)}
+          disabled={loading}
+        >
+          <span className="action-icon">💬</span>
+          <span className="action-count">{poll.comments?.length || 0}</span>
+          <span className="action-text">Comment</span>
+        </button>
+
+        <button className="action-btn" onClick={handleShare}>
+          <span className="action-icon">🔗</span>
+          <span className="action-text">Share</span>
+        </button>
+      </div>
+
+      {/* Comments Section */}
+      {showComments && (
+        <div className="comments-section">
+          <div className="comments-list">
+            {poll.comments?.map((comment, index) => (
+              <div key={index} className="comment-item">
+                <div className="comment-avatar">
+                  {comment.author?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                <div className="comment-content">
+                  <div className="comment-header">
+                    <span className="comment-author">{comment.author?.name || 'Anonymous'}</span>
+                    <span className="comment-time">{formatDate(comment.createdAt)}</span>
+                  </div>
+                  <p className="comment-text">{comment.text}</p>
+                </div>
+              </div>
+            ))}
+            {(!poll.comments || poll.comments.length === 0) && (
+              <div className="no-comments">
+                No comments yet. Be the first to comment!
+              </div>
+            )}
+          </div>
+          
+          <div className="comment-input">
+            <input
+              type="text"
+              placeholder="Write a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+              disabled={loading}
+            />
+            <button 
+              onClick={handleAddComment} 
+              disabled={loading || !newComment.trim()}
+              className="comment-submit"
+            >
+              {loading ? 'Posting...' : 'Post'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

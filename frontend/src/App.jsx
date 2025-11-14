@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import AddPoll from './pages/AddPoll.jsx';
 import EditPoll from './pages/EditPoll.jsx';
@@ -7,62 +7,116 @@ import Profile from './pages/Profile.jsx';
 import Login from './pages/Login';
 import './App.css';
 
-function Nav() {
+function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const logout = () => { 
+  const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/'); 
-    window.location.reload();
+    navigate('/');
   };
 
+  if (!token) return null;
+
   return (
-    <nav className="navbar">
-      <div className="container">
-        <div className="nav-content">
-          <Link to="/" className="nav-brand">
-            <span className="brand-icon">📊</span>
-            <span className="brand-text">VoteSphere</span>
-          </Link>
+    <header className="app-header">
+      <div className="header-container">
+        {/* Logo */}
+        <div className="logo" onClick={() => navigate('/')}>
+          <div className="logo-icon">📊</div>
+          <span className="logo-text">VoteSphere</span>
+        </div>
+
+        {/* Navigation */}
+       {/* <nav className="main-nav">
+          <button 
+            className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+            onClick={() => navigate('/')}
+          >
+            <span className="nav-icon">🏠</span>
+            <span className="nav-text">Home</span>
+          </button>
           
-          <div className="nav-actions">
-            {token ? (
-              <>
-                <Link to="/add" className="btn btn-primary">
-                  <span>+</span>
-                  <span className="btn-text">Create Poll</span>
-                </Link>
-                <Link to="/profile" className="user-menu">
-                  <div className="user-avatar">
-                    {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
-                  <span className="user-name">{user.name || 'User'}</span>
-                </Link>
-                <button className="btn btn-outline logout-btn" onClick={logout}>
-                  <span>🚪</span>
-                  <span className="btn-text">Logout</span>
-                </button>
-              </>
-            ) : (
-              <a href="http://localhost:5000/auth/google" className="btn btn-primary">
-                <span>🔐</span>
-                <span className="btn-text">Sign In</span>
-              </a>
-            )}
+          <button 
+            className={`nav-link ${location.pathname === '/add' ? 'active' : ''}`}
+            onClick={() => navigate('/add')}
+          >
+            <span className="nav-icon">✏️</span>
+            <span className="nav-text">Create</span>
+          </button>
+        </nav> */}
+
+        {/* User Menu */}
+        <div className="user-menu">
+          <div className="user-info">
+            <div className="user-avatar">
+              {user.name?.charAt(0)?.toUpperCase() || 'U'}
+            </div>
+            <span className="user-name">{user.name || 'User'}</span>
+          </div>
+          
+          <div className="dropdown-menu">
+            <button onClick={() => navigate('/profile')} className="dropdown-item">
+              <span className="dropdown-icon">👤</span>
+              Profile
+            </button>
+            <button onClick={logout} className="dropdown-item">
+              <span className="dropdown-icon">🚪</span>
+              Logout
+            </button>
           </div>
         </div>
       </div>
+    </header>
+  );
+}
+
+function BottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const token = localStorage.getItem('token');
+
+  if (!token) return null;
+
+  return (
+    <nav className="bottom-nav">
+      <button 
+        className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
+        onClick={() => navigate('/')}
+      >
+        <span className="nav-icon">🏠</span>
+        <span className="nav-label">Home</span>
+      </button>
+      
+      <button 
+        className={`nav-item ${location.pathname === '/add' ? 'active' : ''}`}
+        onClick={() => navigate('/add')}
+      >
+        <span className="nav-icon">✏️</span>
+        <span className="nav-label">Create</span>
+      </button>
+      
+      <button 
+        className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}
+        onClick={() => navigate('/profile')}
+      >
+        <span className="nav-icon">👤</span>
+        <span className="nav-label">Profile</span>
+      </button>
     </nav>
   );
 }
 
 export default function App() {
+  const navigate = useNavigate();
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
+    
     if (token) { 
       localStorage.setItem('token', token);
       
@@ -78,16 +132,17 @@ export default function App() {
       }
       
       window.history.replaceState({}, document.title, '/');
-      window.location.reload();
+      navigate('/');
     }
-  }, []);
+  }, [navigate]);
 
   const token = localStorage.getItem('token');
 
   return (
     <div className="app">
-      {token && <Nav />}
-      <main className="main-content">
+      {token && <Header />}
+      
+      <main className={`main-content ${token ? 'with-nav' : ''}`}>
         <Routes>
           <Route path="/" element={token ? <Home /> : <Login />} />
           <Route path="/add" element={token ? <AddPoll /> : <Login />} />
@@ -95,6 +150,8 @@ export default function App() {
           <Route path="/profile" element={token ? <Profile /> : <Login />} />
         </Routes>
       </main>
+
+      {token && <BottomNav />}
     </div>
   );
 }
